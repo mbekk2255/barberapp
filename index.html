@@ -58,7 +58,16 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 const num = v => parseInt(String(v ?? "").replace(/\D/g, ""), 10) || 0;
 const fmt = n => n.toLocaleString("ru-RU") + " so'mdan";
-const toMin = t => { const m = String(t).match(/(\d{1,2})[:.](\d{2})/); return m ? +m[1]*60 + +m[2] : null; };
+// "9:00", "09:00:00", "9:00:00 PM" kabi formatlarni daqiqaga o'giradi
+const toMin = t => {
+  const m = String(t ?? "").match(/(\d{1,2})[:.](\d{2})(?::\d{2})?\s*([AaPp])?\.?[Mm]?/);
+  if (!m) return null;
+  let h = +m[1]; const ap = (m[3] || "").toLowerCase();
+  if (ap === "p" && h < 12) h += 12;
+  if (ap === "a" && h === 12) h = 0;
+  return h*60 + +m[2];
+};
+const fmtT = t => { const x = toMin(t); return x === null ? String(t ?? "") : String(Math.floor(x/60)).padStart(2,"0") + ":" + String(x%60).padStart(2,"0"); };
 const safeUrl = u => /^https:\/\//i.test(u) ? u : "";
 const safePhone = p => String(p ?? "").replace(/[^\d+]/g, "");
 const minPrice = b => { const v = Object.values(b.prices).filter(x => x > 0); return v.length ? Math.min(...v) : Infinity; };
@@ -154,7 +163,7 @@ function render() {
     return `<div class="card">
       <div class="name">${esc(b.name)}</div>
       <div class="meta">📍 ${esc(b.district)}, ${esc(b.address)}</div>
-      <div class="meta">🕒 ${esc(b.open)}–${esc(b.close)}${st === null ? "" : ` · <span class="${st ? "open" : "closed"}">${st ? "Hozir ochiq" : "Yopiq"}</span>`}</div>
+      <div class="meta">🕒 ${esc(fmtT(b.open))}–${esc(fmtT(b.close))}${st === null ? "" : ` · <span class="${st ? "open" : "closed"}">${st ? "Hozir ochiq" : "Yopiq"}</span>`}</div>
       ${Object.entries(b.prices).filter(([k,v]) => v > 0).map(([k,v]) => `<div class="row"><span>${esc(k)}</span><b>${fmt(v)}</b></div>`).join("")}
       ${b.note && b.note.trim() ? `<div class="note">💬 ${esc(b.note.trim())}</div>` : ""}
       ${b.pos ? `<a class="btn" href="#" onclick="focusOn(${b.id});return false">📍 Xaritada ko'rish</a>` : ""}
