@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Barber Toshkent</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root { --bg:#fff; --card:#f3f4f6; --text:#111; --hint:#6b7280; --btn:#2563eb; --btntext:#fff; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111; --card:#1f2937; --text:#f3f4f6; --hint:#9ca3af; } }
+  body { margin:0; padding:12px; font-family:system-ui,sans-serif; background:var(--tg-theme-bg-color,var(--bg)); color:var(--tg-theme-text-color,var(--text)); }
+  h1 { font-size:20px; margin:4px 0 12px; }
+  select, input { width:100%; padding:10px; border-radius:10px; border:0; margin-bottom:8px; font-size:15px; background:var(--tg-theme-secondary-bg-color,var(--card)); color:inherit; box-sizing:border-box; }
+  .card { background:var(--tg-theme-secondary-bg-color,var(--card)); border-radius:14px; padding:12px; margin-bottom:10px; }
+  .name { font-weight:600; font-size:16px; }
+  .meta { color:var(--tg-theme-hint-color,var(--hint)); font-size:13px; margin:2px 0; }
+  .row { display:flex; justify-content:space-between; font-size:14px; padding:2px 0; }
+  .open { color:#16a34a; font-weight:600; } .closed { color:#dc2626; font-weight:600; }
+  a.btn { display:inline-block; margin-top:8px; margin-right:6px; padding:8px 12px; border-radius:10px; background:var(--tg-theme-button-color,var(--btn)); color:var(--tg-theme-button-text-color,var(--btntext)); text-decoration:none; font-size:14px; }
+</style>
+</head>
+<body>
+<h1>✂️ Toshkent sartaroshxonalari</h1>
+<input id="q" placeholder="Qidirish (nomi yoki manzil)">
+<select id="district"><option value="">Barcha tumanlar</option></select>
+<select id="sort">
+  <option value="name">Nomi bo'yicha</option>
+  <option value="price">Arzonidan qimmatiga</option>
+</select>
+<div id="list"></div>
+
+<script>
+const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
+
+// NAMUNA ma'lumotlar — haqiqiy ma'lumot bilan almashtiring
+const DATA = [
+  { name:"Namuna Barber 1", district:"Chilonzor", address:"Bunyodkor ko'chasi, 10", lat:41.2756, lng:69.2037, open:"09:00", close:"21:00", phone:"+998900000001",
+    prices:{ "Soch olish":50000, "Soqol":30000, "Soch + soqol":70000 } },
+  { name:"Namuna Barber 2", district:"Yunusobod", address:"Amir Temur shoh ko'chasi, 25", lat:41.3640, lng:69.2870, open:"10:00", close:"22:00", phone:"+998900000002",
+    prices:{ "Soch olish":80000, "Soqol":40000, "Soch + soqol":110000 } },
+  { name:"Namuna Barber 3", district:"Mirzo Ulug'bek", address:"Mirzo Ulug'bek ko'chasi, 5", lat:41.3390, lng:69.3340, open:"08:00", close:"20:00", phone:"+998900000003",
+    prices:{ "Soch olish":40000, "Soqol":25000, "Soch + soqol":60000 } },
+];
+
+const $ = id => document.getElementById(id);
+const fmt = n => n.toLocaleString("ru-RU") + " so'm";
+const minPrice = b => Math.min(...Object.values(b.prices));
+const toMin = t => { const [h,m] = t.split(":").map(Number); return h*60+m; };
+const isOpen = b => { const d = new Date(); const n = d.getHours()*60+d.getMinutes(); return n >= toMin(b.open) && n < toMin(b.close); };
+
+[...new Set(DATA.map(b => b.district))].forEach(d => $("district").add(new Option(d, d)));
+
+function render() {
+  const q = $("q").value.toLowerCase(), dist = $("district").value;
+  let items = DATA.filter(b => (!dist || b.district === dist) && (b.name + b.address).toLowerCase().includes(q));
+  items.sort($("sort").value === "price" ? (a,b) => minPrice(a) - minPrice(b) : (a,b) => a.name.localeCompare(b.name));
+  $("list").innerHTML = items.map(b => `
+    <div class="card">
+      <div class="name">${b.name}</div>
+      <div class="meta">📍 ${b.district}, ${b.address}</div>
+      <div class="meta">🕒 ${b.open}–${b.close} · <span class="${isOpen(b) ? "open" : "closed"}">${isOpen(b) ? "Hozir ochiq" : "Yopiq"}</span></div>
+      ${Object.entries(b.prices).map(([k,v]) => `<div class="row"><span>${k}</span><b>${fmt(v)}</b></div>`).join("")}
+      <a class="btn" href="https://www.google.com/maps?q=${b.lat},${b.lng}" target="_blank">🗺 Xaritada</a>
+      <a class="btn" href="tel:${b.phone}">📞 Qo'ng'iroq</a>
+    </div>`).join("") || "<p>Hech narsa topilmadi</p>";
+}
+["q","district","sort"].forEach(id => $(id).addEventListener("input", render));
+render();
+</script>
+</body>
+</html>
