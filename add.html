@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joylashuvni belgilash</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<style>
+  body { margin:0; padding:12px; font-family:system-ui,sans-serif; background:#fff; color:#111; }
+  @media (prefers-color-scheme: dark) { body { background:#111; color:#f3f4f6; } }
+  h1 { font-size:19px; margin:4px 0 6px; }
+  p { margin:4px 0 10px; font-size:14px; opacity:.8; }
+  #map { height:55vh; min-height:300px; border-radius:14px; margin-bottom:10px; }
+  button { width:100%; padding:12px; border:0; border-radius:12px; font-size:15px; margin-bottom:8px; background:#2563eb; color:#fff; }
+  button.sec { background:#6b7280; }
+  button:disabled { opacity:.4; }
+  #coord { font-weight:600; margin:6px 0; min-height:20px; }
+</style>
+</head>
+<body>
+<h1>📍 Sartaroshxona joylashuvini belgilang</h1>
+<p>Xaritada sartaroshxona turgan joyni bosing yoki "Mening joylashuvim" tugmasini bosing.</p>
+<div id="map"></div>
+<div id="coord">Joy hali tanlanmagan</div>
+<button class="sec" id="loc">📡 Mening joylashuvim</button>
+<button id="go" disabled>✅ Davom etish (formani to'ldirish)</button>
+
+<script>
+// Google Form havolasi ("Yuborish" -> havola), oxiri /viewform bilan tugaydi
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScjAvcZAynRcRoDL0d-hIFfCjR4878BOuHw4YCR-k290CLIMA/viewform?usp=pp_url&entry.1393781193=asd&entry.1999545057=aaa";
+// Oldindan to'ldirilgan havoladan olingan Koordinata maydoni, masalan "entry.1234567890"
+const ENTRY_ID = "entry.1234567890";
+
+const map = L.map("map").setView([41.3111, 69.2797], 12);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
+let pin = null, pos = null;
+
+function setPos(lat, lng, zoom) {
+  pos = [lat, lng];
+  if (pin) pin.setLatLng(pos);
+  else pin = L.circleMarker(pos, { radius: 11, color: "#fff", weight: 3, fillColor: "#dc2626", fillOpacity: 1 }).addTo(map);
+  if (zoom) map.setView(pos, zoom);
+  document.getElementById("coord").textContent = "Tanlandi: " + lat.toFixed(6) + ", " + lng.toFixed(6);
+  document.getElementById("go").disabled = false;
+}
+map.on("click", e => setPos(e.latlng.lat, e.latlng.lng));
+
+document.getElementById("loc").onclick = () => {
+  if (!navigator.geolocation) return alert("Brauzer joylashuvni aniqlay olmaydi. Xaritadan qo'lda belgilang.");
+  navigator.geolocation.getCurrentPosition(
+    p => setPos(p.coords.latitude, p.coords.longitude, 17),
+    () => alert("Joylashuvga ruxsat berilmadi. Xaritadan qo'lda belgilang."),
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+};
+
+document.getElementById("go").onclick = () => {
+  if (!pos) return;
+  const value = pos[0].toFixed(6) + ", " + pos[1].toFixed(6);
+  if (!FORM_URL || !ENTRY_ID) {
+    return alert("Form havolasi sozlanmagan. Koordinata: " + value);
+  }
+  const sep = FORM_URL.includes("?") ? "&" : "?";
+  location.href = FORM_URL + sep + "usp=pp_url&" + encodeURIComponent(ENTRY_ID) + "=" + encodeURIComponent(value);
+};
+</script>
+</body>
+</html>
