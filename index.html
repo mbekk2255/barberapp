@@ -39,7 +39,7 @@ const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
 
 // 1) Google Sheets "Veb-sahifada e'lon qilish" (CSV) havolasini shu yerga qo'ying.
 //    Bo'sh qoldirsangiz, pastdagi namunaviy ma'lumotlar ko'rinadi.
-const SHEET_CSV_URL = "";
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSOrt-0O_BhWZ1k6xLm4DAFoD1swauE_X-A72_bAJD_YGsTGkBXIsrZ1G2M4mtnPcPg04k1NVS_0yoc/pub?gid=54166717&single=true&output=csv";
 
 const SAMPLE = [
   { name:"Namuna Barber 1", district:"Chilonzor", address:"Bunyodkor ko'chasi, 10", map:"https://www.google.com/maps?q=41.2756,69.2037", open:"09:00", close:"21:00", phone:"+998900000001", note:"Narx soch turiga qarab o'zgaradi. Oldindan yozilish shart emas.", prices:{ "Soch olish":50000, "Soqol":30000, "Soch + soqol":70000 } },
@@ -101,8 +101,8 @@ async function load() {
   const rows = parseCSV(text);
   if (!rows.length) return [];
   const head = rows[0].map(h => h.trim());
-  if (head.indexOf(COL.name) === -1) throw new Error("Jadvalda '" + COL.name + "' ustuni topilmadi. Ustunlar: " + head.join(" | "));
-  const idx = k => head.indexOf(COL[k]);
+  if (!head.some(h => h.startsWith(COL.name))) throw new Error("Jadvalda '" + COL.name + "' ustuni topilmadi. Ustunlar: " + head.join(" | "));
+  const idx = k => { let i = head.indexOf(COL[k]); if (i === -1) i = head.findIndex(h => h.startsWith(COL[k])); return i; };
   return rows.slice(1)
     .filter(r => (r[idx("ok")] || "").trim().toLowerCase() === "ha")
     .map(r => ({
@@ -164,7 +164,7 @@ function render() {
   const items = DATA.filter(b => (!dist || b.district === dist) && (b.name + " " + b.address).toLowerCase().includes(q));
   items.sort($("sort").value === "price" ? (a,b) => minPrice(a) - minPrice(b) : (a,b) => a.name.localeCompare(b.name));
   $("list").innerHTML = items.map(b => {
-    const st = isOpen(b), map = safeUrl(b.map), ph = safePhone(b.phone);
+    const st = isOpen(b), map = safeUrl(b.map) || (b.pos ? "https://www.google.com/maps?q=" + b.pos[0] + "," + b.pos[1] : ""), ph = safePhone(b.phone);
     return `<div class="card">
       <div class="name">${esc(b.name)}</div>
       <div class="meta">📍 ${esc(b.district)}, ${esc(b.address)}</div>
