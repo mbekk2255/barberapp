@@ -33,6 +33,10 @@
   <option value="price">Arzonidan qimmatiga</option>
 </select>
 <div id="list"><p>Yuklanmoqda...</p></div>
+<div class="card" style="text-align:center">
+  <div class="meta">Sartaroshmisiz?</div>
+  <a class="btn" href="#" id="addbtn">➕ Sartaroshxonamni qo'shish</a>
+</div>
 
 <script>
 const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
@@ -158,6 +162,12 @@ function focusOn(id) {
   window.scrollTo({ top: 0, behavior: "smooth" });
   map.setView(m.getLatLng(), 16); m.openPopup();
 }
+
+$("addbtn").addEventListener("click", e => {
+  e.preventDefault();
+  const url = new URL("add.html", location.href).href;
+  try { tg.openLink(url); } catch (err) { window.open(url, "_blank"); }
+});
 
 function render() {
   const q = $("q").value.toLowerCase(), dist = $("district").value;
